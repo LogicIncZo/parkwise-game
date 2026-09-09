@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The camera behind the <span class='accent'>counter</span> · ParkWise Privacy Harms · Kaarana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--asphalt:#141412;--asphalt-2:#1b1b18;--panel:#201f1b;--edge:#33322b;--ink:#f2eee2;--dim:#a8a294;
+  --faint:#6e6a5e;--sign:#ffc400;--deep:#e0a800;--red:#ff6b5e;--green:#3fd68f;--cyan:#5bd7f5;--violet:#c2b4ff;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--disp:'Anton',sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--asphalt);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px}
+  .crumbs{font-family:var(--mono);font-size:12px;letter-spacing:.06em;padding:18px 0 0}
+  .crumbs a{color:var(--sign);text-decoration:none}
+  .crumbs a:hover{text-decoration:underline}
+  .crumbs .sep{color:var(--faint);margin:0 6px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--sign);margin-top:26px}
+  h1{font-family:var(--disp);font-weight:400;font-size:clamp(30px,5.4vw,54px);line-height:1.04;text-transform:uppercase;margin:12px 0 14px}
+  h1 .accent{color:var(--sign)}
+  .stand{color:var(--dim);font-size:17px;max-width:720px;margin-bottom:8px}
+  .stand b{color:var(--ink)}
+  .lane{height:12px;margin:30px 0;opacity:.5;background:repeating-linear-gradient(90deg,var(--faint) 0 34px,transparent 34px 62px)}
+  h2{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--sign);margin:30px 0 14px}
+  p{color:var(--dim);margin-bottom:14px}
+  p b,li b{color:var(--ink)}
+  p .inf{font-family:var(--mono);font-size:9.5px;color:var(--violet);border:1px solid rgba(194,180,255,.4);border-radius:3px;padding:1px 5px;letter-spacing:.08em;vertical-align:2px}
+  .specbox{border:1px solid var(--edge);border-left:3px solid var(--sign);border-radius:6px;background:var(--asphalt-2);padding:14px 16px;font-family:var(--mono);font-size:13px;margin-bottom:16px}
+  .specbox .fr{display:flex;gap:10px;padding:5px 0;border-bottom:1px dashed #2c2b25;flex-wrap:wrap}
+  .specbox .fr:last-child{border:none}
+  .specbox .fn{color:var(--dim);min-width:170px}
+  .specbox .fv{color:var(--ink)}
+  .tag{font-size:9px;font-weight:600;letter-spacing:.1em;border:1px solid;border-radius:3px;padding:1px 5px;text-transform:uppercase;white-space:nowrap}
+  .tag.loc{color:var(--cyan);border-color:rgba(91,215,245,.5)}
+  .tag.veh{color:var(--sign);border-color:rgba(255,196,0,.5)}
+  .tag.con{color:var(--red);border-color:rgba(255,107,94,.5)}
+  .tag.fin{color:var(--green);border-color:rgba(63,214,143,.5)}
+  .tag.beh{color:var(--violet);border-color:rgba(194,180,255,.5)}
+  .case{border:1px solid var(--edge);border-radius:8px;background:var(--panel);padding:16px 18px;margin-bottom:14px}
+  .case .when{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
+  .case p{margin-bottom:8px;font-size:15px}
+  .case p:last-child{margin-bottom:0}
+  sup a{color:var(--sign);text-decoration:none;font-family:var(--mono);font-size:11px}
+  ol.end{font-size:13px;color:var(--faint);padding-left:20px}
+  ol.end li{margin-bottom:6px}
+  ol.end a{color:var(--cyan);text-decoration:none;word-break:break-all}
+  ol.end a:hover{text-decoration:underline}
+  .ask{border:1px dashed var(--deep);border-radius:8px;padding:16px 18px;background:rgba(255,196,0,.05);margin-bottom:16px}
+  .ask ul{list-style:none}
+  .ask li{color:var(--dim);padding:6px 0 6px 26px;position:relative;border-bottom:1px dashed #2c2b25}
+  .ask li:last-child{border:none}
+  .ask li::before{content:"?";position:absolute;left:0;top:6px;color:var(--sign);font-family:var(--mono);font-weight:600}
+  .harmnav{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:26px 0 8px}
+  .harmnav a{border:1px solid var(--edge);border-radius:6px;padding:10px 12px;color:var(--dim);text-decoration:none;font-size:13px}
+  .harmnav a b{color:var(--ink);display:block;font-size:12px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+  .harmnav a:hover{border-color:var(--deep)}
+  .harmnav a.this{border-color:var(--sign);background:rgba(255,196,0,.07)}
+  footer{border-top:1px solid var(--edge);margin-top:34px;padding:18px 0 44px;font-family:var(--mono);font-size:11.5px;color:var(--faint);line-height:1.8}
+  footer a{color:var(--sign);text-decoration:none}
+  ::selection{background:var(--sign);color:#141412}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumbs"><a href="/parkwise-demo">← ParkWise simulator</a><span class="sep">·</span><a href="/parkwise-demo/spec">API spec</a></div>
+  <div class="kicker">Kaarana <span style="color:var(--faint)">·</span> ParkWise privacy harms <span style="color:var(--faint)">·</span> 1 / 5 <span style="color:var(--faint)">·</span> [DPI]</div>
+  <h1>The camera behind the <span class='accent'>counter</span></h1>
+  <p class="stand">Parking apps don't need cameras to complete a surveillance network — they supply the identity layer that makes cameras personally meaningful. <b>Where the plate ledger meets ANPR, every park becomes a tracked movement.</b></p>
+  <div class="lane"></div>
+  <h2>On the record (the spec)</h2>
+  <div class="specbox">
+    <div class="fr"><span class="fn">vehicle_plate</span><span class="tag veh">veh</span><span class="fv">required on every /init — a state-assigned identifier, stored per session</span></div>
+    <div class="fr"><span class="fn">zone_id / slot_id</span><span class="tag loc">loc</span><span class="fv">exact zone, sometimes an exact bay, bound to the plate</span></div>
+    <div class="fr"><span class="fn">start_time / end_time</span><span class="tag beh">beh</span><span class="fv">session window to the second</span></div>
+    <div class="fr"><span class="fn">active_sessions (response)</span><span class="tag beh">beh</span><span class="fv">platform knows occupancy per zone in real time</span></div>
+  </div>
+<h2>The harm</h2>
+<p>A registration plate is the rare identifier you <b>bolt onto the outside of your vehicle</b>. It is readable at a distance, without your knowledge or consent, by any camera with a clear line of sight. That property is exactly why a parking platform's plate ledger is so dangerous to a city's surveillance surface: it is the <b>join table</b> between two worlds — the app world (identity, phone, payment) and the camera world (anonymous-until-now plate reads).</p>
+<p>Indian smart-city parking is already built on sensors and cameras: Nashik's smart parking system, for example, pairs 4,500 slots across 22 locations with "sensors and cameras for data collection on parking plot capacity and availability".<sup><a href="#n1">[1]</a></sup> Once enforcement cameras read plates to check payment, every park becomes a camera read <b>with a name and phone attached</b>. The payment app doesn't need its own ANPR network to matter — it supplies the identity layer that makes the camera network's output personally meaningful.</p>
+<p>The trajectory is visible where ANPR matured first. The UK's national network was built for policing and enforcement and grew into infrastructure capable of holding <b>on the order of tens of millions of plate reads per day</b>, with police strategy documents envisaging the <b>tracking of vehicle movements</b> as a routine use — not an exception.<sup><a href="#n2">[2]</a></sup> Parking is the plausible on-ramp for the same arc in Indian cities: a system sold as "paying for parking" becoming, quietly, a system that timestamps vehicles at street resolution.</p>
+<p class="stand" style="font-size:14.5px">What the spec admits: it collects plates. What it doesn't say — and what no line of the API prevents: <b>those plates becoming queryable by, or joinable to, camera systems elsewhere in the city</b>. <span class="inf">inference</span></p>
+
+  <h2>Ask your city</h2>
+  <div class="ask"><ul>
+    <li>Does on-street parking enforcement use ANPR cameras, and does their data share infrastructure with the parking app vendor?</li>
+    <li>Who can query the plate ledger — police, revenue staff, the vendor's engineers — and is every lookup logged?</li>
+    <li>How long is a plate-level parking record retained after the session ends and the fee is settled?</li>
+    <li>Is plate data from the app ever matched against stolen-vehicle, e-challan or "watchlist" databases, and under what written legal basis?</li>
+  </ul></div>
+  <div class="harmnav">
+    <a class="this" href="/parkwise-demo/anpr"><b>ANPR</b>The camera behind the counter</a>
+    <a href="/parkwise-demo/vahan-chain"><b>VAHAN chain</b>One plate from a name</a>
+    <a href="/parkwise-demo/breach-ledger"><b>Breach ledger</b>When parking data leaks</a>
+    <a href="/parkwise-demo/pattern-of-life"><b>Pattern of life</b>Dwell time is a diary</a>
+    <a href="/parkwise-demo/who-else"><b>Who else</b>Vendors, BAPs, DPDP</a>
+  </div>
+  <h2>Sources</h2>
+  <ol class="end">
+    <li><a href="https://government.economictimes.indiatimes.com/news/digital-india/nashik-smart-city-to-launch-smart-parking-app/73730830">Nashik Smart City to launch smart parking app</a> — ETGovernment, Jan 2020.</li>
+    <li><a href="http://www.no-cctv.org.uk/whats_wrong_with_anpr.asp">What's Wrong With ANPR?</a> — No CCTV (UK), report.</li>
+  </ol>
+</div>
+<footer><div class="wrap">
+  KAARANA · ಕಾರಣ — independent critique of Aadhaar &amp; Digital India. Part of the <a href="/parkwise-demo">ParkWise evidence bench</a>.<br>
+  API-fact claims come from <a href="/parkwise-demo/spec">parkwise-public-api-openapi.json</a> v1.0.0; everything else is labelled inference. Simulated data throughout — no real sessions, plates or persons.
+</div></footer>
+</body>
+</html>

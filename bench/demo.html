@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkWise — What One Parking Session Reveals · Kaarana Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --asphalt:#141412;
+    --asphalt-2:#1b1b18;
+    --panel:#201f1b;
+    --panel-edge:#33322b;
+    --ink:#f2eee2;
+    --ink-dim:#a8a294;
+    --ink-faint:#6e6a5e;
+    --sign:#ffc400;
+    --sign-deep:#e0a800;
+    --red:#ff6b5e;
+    --green:#3fd68f;
+    --cyan:#5bd7f5;
+    --violet:#c2b4ff;
+    --mono:'IBM Plex Mono',monospace;
+    --sans:'IBM Plex Sans',sans-serif;
+    --disp:'Anton',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--asphalt);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* grain */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+  /* ---------- masthead ---------- */
+  header{border-bottom:1px solid var(--panel-edge);padding:30px 0 26px;position:relative;overflow:hidden}
+  header::after{
+    content:"";position:absolute;left:0;right:0;bottom:-1px;height:10px;opacity:.55;
+    background:repeating-linear-gradient(90deg,var(--sign) 0 44px,transparent 44px 78px);
+  }
+  .kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--sign);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker .sep{color:var(--ink-faint)}
+  h1{font-family:var(--disp);font-weight:400;font-size:clamp(34px,6vw,62px);line-height:1.02;text-transform:uppercase;letter-spacing:.01em;margin:14px 0 10px}
+  h1 .accent{color:var(--sign)}
+  .standfirst{max-width:760px;color:var(--ink-dim);font-size:16px}
+  .standfirst b{color:var(--ink)}
+  .metabar{display:flex;gap:22px;flex-wrap:wrap;margin-top:18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);letter-spacing:.04em}
+  .metabar span b{color:var(--ink-dim);font-weight:500}
+  .sim-banner{
+    margin-top:18px;border:1px dashed var(--sign-deep);border-radius:6px;
+    padding:10px 14px;font-family:var(--mono);font-size:12.5px;color:var(--sign);
+    display:flex;gap:10px;align-items:baseline;background:rgba(255,196,0,.05)
+  }
+
+  /* ---------- lane divider ---------- */
+  .lane{height:14px;margin:34px 0;opacity:.5;
+    background:repeating-linear-gradient(90deg,var(--ink-faint) 0 34px,transparent 34px 62px);
+    display:flex;align-items:center}
+  .lane span{background:var(--asphalt);padding:0 14px;font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--ink-dim);transform:translateX(0)}
+  .lane.wrap-lane{max-width:1180px;margin-left:auto;margin-right:auto}
+
+  /* ---------- layout ---------- */
+  .deck{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:26px;align-items:start}
+  @media(max-width:920px){.deck{grid-template-columns:1fr}}
+
+  .panel{background:var(--panel);border:1px solid var(--panel-edge);border-radius:8px;overflow:hidden}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--panel-edge);background:var(--asphalt-2)}
+  .panel-head h2{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}
+  .panel-body{padding:16px}
+
+  /* ---------- step rail ---------- */
+  .steps{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .step-btn{
+    font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.05em;
+    background:transparent;border:1px solid var(--panel-edge);color:var(--ink-faint);
+    border-radius:5px;padding:8px 12px;cursor:not-allowed;transition:all .18s;
+    display:flex;align-items:center;gap:8px;text-transform:uppercase
+  }
+  .step-btn .n{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:3px;background:var(--panel-edge);font-size:10px;color:var(--ink-dim)}
+  .step-btn.ready{color:var(--ink);border-color:var(--sign-deep);cursor:pointer}
+  .step-btn.ready:hover{background:rgba(255,196,0,.1)}
+  .step-btn.ready .n{background:var(--sign);color:#141412}
+  .step-btn.done{color:var(--green);border-color:rgba(63,214,143,.4);cursor:default}
+  .step-btn.done .n{background:var(--green);color:#141412}
+  .step-btn.active{border-color:var(--sign);box-shadow:0 0 0 1px var(--sign);color:var(--sign)}
+
+  .autorun{
+    font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    background:var(--sign);color:#141412;border:none;border-radius:5px;padding:8px 16px;cursor:pointer;
+    transition:transform .12s, box-shadow .12s
+  }
+  .autorun:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(255,196,0,.25)}
+  .autorun:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
+  .resetbtn{background:transparent;border:1px solid var(--panel-edge);color:var(--ink-dim);border-radius:5px;padding:8px 14px;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+  .resetbtn:hover{color:var(--ink);border-color:var(--ink-dim)}
+
+  /* ---------- app mock ---------- */
+  .appview{border:1px solid var(--panel-edge);border-radius:6px;background:var(--asphalt-2);padding:16px;min-height:330px}
+  .appview .screenlabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:var(--ink-faint);text-transform:uppercase;margin-bottom:12px}
+  .fieldrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  .fieldrow.thirds{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:560px){.fieldrow,.fieldrow.thirds{grid-template-columns:1fr}}
+  .fld label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:5px}
+  .fld input,.fld select{
+    width:100%;background:#121210;border:1px solid var(--panel-edge);border-radius:5px;
+    color:var(--ink);font-family:var(--mono);font-size:13.5px;padding:9px 11px;outline:none
+  }
+  .fld input:focus,.fld select:focus{border-color:var(--sign-deep)}
+  .go{
+    margin-top:6px;width:100%;background:var(--sign);color:#141412;font-family:var(--mono);
+    font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:12.5px;
+    border:none;border-radius:5px;padding:11px;cursor:pointer
+  }
+  .go:hover{background:#ffd34d}
+  .go:disabled{opacity:.35;cursor:default}
+
+  .zonecard{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    border:1px solid var(--panel-edge);border-radius:6px;padding:10px 12px;margin-bottom:8px;
+    background:var(--panel);cursor:pointer;transition:border-color .15s,transform .15s
+  }
+  .zonecard:hover{border-color:var(--sign-deep);transform:translateX(3px)}
+  .zonecard.sel{border-color:var(--sign);background:rgba(255,196,0,.06)}
+  .zonecard .zn{font-weight:600;font-size:14px}
+  .zonecard .zm{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:2px}
+  .zonecard .zr{text-align:right;font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+  .zonecard .zr .free{font-weight:600}
+  .free.high{color:var(--green)} .free.mid{color:var(--sign)} .free.low{color:var(--red)}
+
+  .paybox{border:1px solid rgba(63,214,143,.35);border-radius:6px;padding:12px;background:rgba(63,214,143,.05)}
+  .paybox .plink{font-family:var(--mono);font-size:12px;color:var(--cyan);word-break:break-all}
+  .paybox .exp{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:4px}
+  .paidstamp{display:inline-block;margin-top:8px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.15em;color:var(--green);border:1px solid var(--green);border-radius:4px;padding:3px 8px;transform:rotate(-2deg)}
+
+  .sessionlive{border:1px solid var(--panel-edge);border-radius:6px;padding:14px;background:var(--panel)}
+  .bigtime{font-family:var(--disp);font-size:44px;color:var(--sign);line-height:1;font-variant-numeric:tabular-nums}
+  .kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12.5px;padding:6px 0;border-bottom:1px dashed #2c2b25}
+  .kv:last-child{border-bottom:none}
+  .kv .k{color:var(--ink-faint)} .kv .v{color:var(--ink)}
+
+  .resp{
+    margin-top:14px;border-top:1px dashed #2c2b25;padding-top:12px;
+    font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);white-space:pre-wrap;word-break:break-word;
+    max-height:190px;overflow:auto
+  }
+  .resp .rl{color:var(--cyan)}
+  .resp .ok{color:var(--green)}
+  .latency{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+  .waiting{font-family:var(--mono);font-size:12px;color:var(--ink-faint);padding:30px 0;text-align:center;letter-spacing:.08em}
+
+  /* ---------- ledger ---------- */
+  .ledger-wrap{position:sticky;top:18px}
+  @media(max-width:920px){.ledger-wrap{position:static}}
+  .counters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .counter{border:1px solid var(--panel-edge);border-radius:6px;padding:10px 12px;background:var(--asphalt-2)}
+  .counter .num{font-family:var(--disp);font-size:26px;line-height:1;color:var(--sign);font-variant-numeric:tabular-nums}
+  .counter .lab{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px}
+  .counter.ident .num{color:var(--red)}
+
+  .ledger{max-height:640px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .ledger .empty{font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);text-align:center;padding:44px 16px;letter-spacing:.04em}
+  .lentry{border:1px solid var(--panel-edge);border-left:3px solid var(--sign);border-radius:5px;background:var(--asphalt-2);padding:10px 12px;animation:slidein .4s ease both}
+  @keyframes slidein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .lentry .ep{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:11.5px;font-weight:600}
+  .lentry .ep .method{color:var(--sign)}
+  .lentry .ep .path{color:var(--ink)}
+  .lentry .ep .t{color:var(--ink-faint);font-weight:400}
+  .lentry .fields{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+  .frow{display:flex;gap:8px;align-items:baseline;font-family:var(--mono);font-size:11.5px;flex-wrap:wrap}
+  .fname{color:var(--ink-dim)}
+  .fval{color:var(--ink);word-break:break-all}
+  .tag{font-size:9px;font-weight:600;letter-spacing:.1em;border:1px solid;border-radius:3px;padding:1px 5px;text-transform:uppercase;white-space:nowrap}
+  .tag.loc{color:var(--cyan);border-color:rgba(91,215,245,.5)}
+  .tag.veh{color:var(--sign);border-color:rgba(255,196,0,.5)}
+  .tag.con{color:var(--red);border-color:rgba(255,107,94,.5)}
+  .tag.fin{color:var(--green);border-color:rgba(63,214,143,.5)}
+  .tag.beh{color:var(--violet);border-color:rgba(194,180,255,.5)}
+
+  /* ---------- city pulse ---------- */
+  .pulse{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:26px;align-items:stretch}
+  @media(max-width:920px){.pulse{grid-template-columns:1fr}}
+  .citygrid{position:relative;border:1px solid var(--panel-edge);border-radius:8px;background:
+    linear-gradient(rgba(255,196,0,.03),rgba(255,196,0,.03)),
+    repeating-linear-gradient(0deg,transparent 0 39px,rgba(242,238,226,.05) 39px 40px),
+    repeating-linear-gradient(90deg,transparent 0 39px,rgba(242,238,226,.05) 39px 40px),
+    var(--asphalt-2);
+    min-height:280px;overflow:hidden}
+  .citygrid .road-h{position:absolute;left:0;right:0;top:52%;height:2px;background:repeating-linear-gradient(90deg,rgba(242,238,226,.25) 0 18px,transparent 18px 34px)}
+  .citygrid .road-v{position:absolute;top:0;bottom:0;left:47%;width:2px;background:repeating-linear-gradient(180deg,rgba(242,238,226,.25) 0 18px,transparent 18px 34px)}
+  .zdot{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px}
+  .zdot .dot{border-radius:50%;border:1.5px solid var(--sign);transition:all .6s}
+  .zdot .zl{font-family:var(--mono);font-size:9px;color:var(--ink-faint);white-space:nowrap;letter-spacing:.05em}
+  .aggrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+  .zbar{margin-bottom:9px}
+  .zbar .zl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-bottom:3px}
+  .zbar .track{height:7px;border-radius:4px;background:#26251f;overflow:hidden}
+  .zbar .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--sign-deep),var(--sign));transition:width .7s ease}
+  .zbar .fill.hot{background:linear-gradient(90deg,#b3541e,var(--red))}
+
+  /* ---------- report ---------- */
+  .report-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .rcard{border:1px solid var(--panel-edge);border-radius:8px;background:var(--panel);padding:18px}
+  .rcard h3{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--sign);margin-bottom:10px}
+  .rcard ul{list-style:none}
+  .rcard li{font-size:13.5px;color:var(--ink-dim);padding:5px 0 5px 18px;position:relative;border-bottom:1px dashed #2c2b25}
+  .rcard li:last-child{border-bottom:none}
+  .rcard li::before{content:"→";position:absolute;left:0;color:var(--sign);font-family:var(--mono);font-size:12px}
+  .rcard li b{color:var(--ink)}
+  .rcard li .inf{font-family:var(--mono);font-size:9.5px;color:var(--violet);border:1px solid rgba(194,180,255,.4);border-radius:3px;padding:0 4px;margin-left:6px;letter-spacing:.08em}
+  .rcard.note{border-color:rgba(194,180,255,.35)}
+  .rcard.note h3{color:var(--violet)}
+
+  /* ---------- footer ---------- */
+  footer{margin-top:44px;border-top:1px solid var(--panel-edge);padding:22px 0 40px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  footer a{color:var(--sign);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  h2.sect{font-family:var(--disp);font-weight:400;text-transform:uppercase;font-size:clamp(22px,3.4vw,32px);letter-spacing:.01em;margin-bottom:6px}
+  p.sectsub{color:var(--ink-dim);margin-bottom:18px;max-width:720px}
+  ::selection{background:var(--sign);color:#141412}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Kaarana <span class="sep">·</span> Urban DPI evidence bench <span class="sep">·</span> <span style="color:var(--ink-dim)">[DPI]</span></div>
+    <h1>ParkWise: what one<br>parking session <span class="accent">reveals</span></h1>
+    <p class="standfirst">A working simulation of a city smart-parking platform, traced endpoint-by-endpoint from its public
+    API spec. On the left, the app as the customer sees it. On the right, <b>the same actions rendered as the data they
+    generate</b> — every field the platform collects, tagged by what it can identify about you.</p>
+    <div class="metabar">
+      <span>SOURCE <b>parkwise-public-api-openapi.json</b> v1.0.0</span>
+      <span>ENDPOINTS <b>7</b></span>
+      <span>CURRENCY <b>INR</b></span>
+      <span>RAIL <b>Juspay payment links</b></span>
+      <span>DEPLOYMENT MODEL <b>ULB-governed zones · Beckn-style BAP integration</b></span>
+      <span>CITIES <b>4 simulated</b></span>
+      <span>PRIVACY HARMS <b><a href="#harms" style="color:var(--sign);text-decoration:none">5 deep dives ↓</a></b></span>
+    </div>
+    <div class="sim-banner">⚠ SIMULATED DATA ONLY — every value on this page is generated locally in your browser. No request leaves this page; no ParkWise server is contacted.</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="lane"><span>01 · The booking flow</span></div>
+
+  <div class="deck">
+    <!-- ============ LEFT: simulator ============ -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Customer app · simulated</h2>
+        <div style="display:flex;gap:8px">
+          <button class="autorun" id="autorun">▶ Run full session</button>
+          <button class="resetbtn" id="reset">Reset</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="steps" id="steps"></div>
+        <div class="appview" id="appview">
+          <div class="screenlabel" id="screenlabel">Screen · idle</div>
+          <div id="appcontent"><div class="waiting">Pick a step above, or hit “Run full session”.<br>Each step fires the corresponding endpoint against simulated city data.</div></div>
+        </div>
+        <div class="resp" id="resp"></div>
+      </div>
+    </div>
+
+    <!-- ============ RIGHT: ledger ============ -->
+    <div class="ledger-wrap">
+      <div class="panel">
+        <div class="panel-head"><h2>What the system collected</h2><span class="latency" id="clock">t+0.0s</span></div>
+        <div class="panel-body">
+          <div class="counters">
+            <div class="counter"><div class="num" id="c-calls">0</div><div class="lab">API calls</div></div>
+            <div class="counter"><div class="num" id="c-fields">0</div><div class="lab">Data points</div></div>
+            <div class="counter ident"><div class="num" id="c-ident">0</div><div class="lab">Identifying</div></div>
+          </div>
+          <div class="ledger" id="ledger">
+            <div class="empty">Nothing collected yet.<br>Every action on the left is mirrored here as the data it emits.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lane"><span>02 · City pulse — the aggregate picture</span></div>
+
+  <div class="pulse">
+    <div class="panel">
+      <div class="panel-head"><h2>Live zone occupancy · simulated <span id="pulse-city" style="color:var(--sign)">Bhubaneswar</span> grid</h2></div>
+      <div class="panel-body">
+        <div class="citygrid" id="citygrid">
+          <div class="road-h"></div><div class="road-v"></div>
+        </div>
+        <div class="aggrow">
+          <div class="counter"><div class="num" id="agg-sessions">0</div><div class="lab">Active sessions</div></div>
+          <div class="counter"><div class="num" id="agg-occ">0%</div><div class="lab">Citywide occupancy</div></div>
+          <div class="counter"><div class="num" id="agg-rev">₹0</div><div class="lab">Revenue today (sim)</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>What the <span id="ulb-name" style="color:var(--sign)">Bhubaneswar Smart City Ltd</span> dashboard sees</h2><span class="latency">updates every 3s (sim)</span></div>
+      <div class="panel-body" id="zonebars"></div>
+    </div>
+  </div>
+
+  <div class="lane"><span>03 · The receipt you can’t see</span></div>
+
+  <h2 class="sect" id="harms">One 45-minute park, itemised</h2>
+  <p class="sectsub">Fields below come straight from the spec; the linkage notes are <span class="tag" style="color:var(--violet);border-color:rgba(194,180,255,.5)">inference</span> — what a platform (or anyone it shares data with) can derive, not what the API document admits.</p>
+  <div class="report-grid">
+    <div class="rcard">
+      <h3>Collected by design</h3>
+      <ul>
+        <li><b>Precise location fixes</b> — search latitude/longitude to the metre, plus radius and distance to every zone.</li>
+        <li><b>Vehicle registration plate</b> — a state-assigned ID, logged per session with vehicle type.</li>
+        <li><b>Phone number</b> — optional in the spec, requested by every real integration.</li>
+        <li><b>Email address</b> — optional, same story.</li>
+        <li><b>Exact dwell time</b> — start, end, extension and early-exit timestamps to the second.</li>
+        <li><b>Payment trail</b> — amounts, currency, Juspay link tokens, payment status per event.</li>
+      </ul>
+    </div>
+    <div class="rcard note">
+      <h3>Derivable downstream <span class="inf">inference</span></h3>
+      <ul>
+        <li><b>Plate → owner identity.</b> VAHAN/RC records chain a plate to a name and address.</li>
+        <li><b>Phone → financial identity.</b> A mobile number is the primary key of UPI, and usually of KYC.</li>
+        <li><b>Payment → instrument.</b> The Juspay rail sees the payer’s instrument and tokenised credentials.</li>
+        <li><b>Routine profiling.</b> Repeated sessions at the same zones and hours sketch a weekly movement pattern — no ANPR or GPS tracker required.</li>
+        <li><b>Sharing surface.</b> “BAP integration” means third-party apps sit in this loop; the data’s blast radius is a policy choice, not a technical limit.</li>
+      </ul>
+    </div>
+    <div class="rcard">
+      <h3>The asymmetry</h3>
+      <ul>
+        <li>The customer’s app shows a <b>zone name and a countdown</b>.</li>
+        <li>The platform’s ledger holds <b>a person’s location, vehicle, contact and payment history</b> — retained on the platform’s clock, under the city’s contract, with no user-visible expiry in the spec.</li>
+        <li>A parking fee is one of the smallest transactions in a city’s day. It is also one of the <b>cheapest ways to timestamp a person’s presence</b> at a place and time.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="rcard" style="margin-top:14px;border-color:rgba(255,107,94,.4)">
+    <h3 style="color:var(--red)">Privacy harms, examined · 5 deep dives</h3>
+    <ul style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 18px">
+      <li style="border:none"><a href="/parkwise-demo/anpr" style="color:var(--ink);text-decoration:none"><b>ANPR</b> — the camera behind the counter</a></li>
+      <li style="border:none"><a href="/parkwise-demo/vahan-chain" style="color:var(--ink);text-decoration:none"><b>VAHAN chain</b> — one plate from a name</a></li>
+      <li style="border:none"><a href="/parkwise-demo/breach-ledger" style="color:var(--ink);text-decoration:none"><b>Breach ledger</b> — when parking data leaks</a></li>
+      <li style="border:none"><a href="/parkwise-demo/pattern-of-life" style="color:var(--ink);text-decoration:none"><b>Pattern of life</b> — dwell time is a diary</a></li>
+      <li style="border:none"><a href="/parkwise-demo/who-else" style="color:var(--ink);text-decoration:none"><b>Who else is in the loop</b> — vendors, BAPs, DPDP</a></li>
+          <li style="border:none;margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        <a href="/parkwise-game" style="background:var(--sign,#ffc400);color:#000;padding:8px 14px;border-radius:6px;text-decoration:none;font-weight:700;font-size:13px">▶ PLAY THE 3D GAME — Pay &amp; Display</a>
+        <a href="/parkwise-report" style="border:1px solid #ffc400;color:#ffc400;padding:8px 14px;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px">Read the counter-narrative report</a>
+      </li>
+</ul>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div>
+      KAARANA · ಕಾರಣ — independent critique of Aadhaar &amp; Digital India.<br>
+      Simulation built from <a href="/parkwise-demo/spec">parkwise-public-api-openapi.json</a> · all data fabricated · nothing transmitted.
+    </div>
+    <div>
+      Zone names are real localities across Bhubaneswar, Delhi, Chennai and Bengaluru; tariffs and availability are simulated.<br>
+      No personal data was collected in the making of this page — including yours.
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ================= simulated city data ================= */
+const CITIES = {
+  bbs:{name:"Bhubaneswar", ulb:"Bhubaneswar Smart City Ltd", plate:"OD02AB1234", rate:20, radiusFloor:1500,
+    center:{lat:20.2961,lng:85.8245},
+    presets:[{name:"Saheed Nagar",lat:20.2961,lng:85.8245},{name:"Master Canteen",lat:20.2714,lng:85.8420},{name:"Patia Square",lat:20.3180,lng:85.8200}],
+    zones:[
+      {id:"bbs-z1", name:"Saheed Nagar Main Road - 4W", vt:"4W", tariff:"flat",       slots:25, lat:20.2961, lng:85.8245, cluster:"Saheed Nagar Commercial", base:20,  slotsEnabled:false},
+      {id:"bbs-z2", name:"Janpath Road - 4W",           vt:"4W", tariff:"progressive", slots:30, lat:20.2899, lng:85.8182, cluster:"Unit 1 Market Area",      prog:[20,20,30,30], slotsEnabled:false},
+      {id:"bbs-z3", name:"Master Canteen Road - 4W",    vt:"4W", tariff:"time_based",  slots:40, lat:20.2714, lng:85.8420, cluster:"Master Canteen",          hourly:20, slotsEnabled:false},
+      {id:"bbs-z4", name:"Patia Square - 2W",           vt:"2W", tariff:"progressive", slots:60, lat:20.3180, lng:85.8200, cluster:"Patia Hub",               prog:[10,10,15,15], slotsEnabled:false},
+      {id:"bbs-z5", name:"Kharavela Nagar - 2W",        vt:"2W", tariff:"flat",        slots:35, lat:20.2935, lng:85.8280, cluster:"Kharavela Market",        base:10,  slotsEnabled:false},
+      {id:"bbs-z6", name:"Vani Vihar Circle - 4W",      vt:"4W", tariff:"time_based",  slots:28, lat:20.3050, lng:85.8460, cluster:"Vani Vihar",              hourly:15, slotsEnabled:true},
+      {id:"bbs-z7", name:"Jaydev Vihar - 2W",           vt:"2W", tariff:"time_based",  slots:45, lat:20.3005, lng:85.8130, cluster:"Jaydev Vihar",            hourly:10, slotsEnabled:false},
+      {id:"bbs-z8", name:"Ram Mandir Lane - 4W",        vt:"4W", tariff:"progressive", slots:18, lat:20.2950, lng:85.8340, cluster:"Kharavela Market",        prog:[20,25,30,30], slotsEnabled:true},
+    ]},
+  del:{name:"Delhi", ulb:"NDMC · MCD", plate:"DL01AB1234", rate:25, radiusFloor:4500,
+    center:{lat:28.6304,lng:77.2177},
+    presets:[{name:"Connaught Place",lat:28.6315,lng:77.2167},{name:"Khan Market",lat:28.6000,lng:77.2270},{name:"Nehru Place",lat:28.5494,lng:77.2519}],
+    zones:[
+      {id:"del-z1", name:"Connaught Place Inner Ring - 4W", vt:"4W", tariff:"progressive", slots:40, lat:28.6315, lng:77.2167, cluster:"New Delhi (NDMC)",    prog:[20,20,40,40], slotsEnabled:false},
+      {id:"del-z2", name:"Khan Market - 4W",                vt:"4W", tariff:"time_based",  slots:22, lat:28.6000, lng:77.2270, cluster:"New Delhi (NDMC)",    hourly:20, slotsEnabled:false},
+      {id:"del-z3", name:"ITO Crossing - 4W",               vt:"4W", tariff:"time_based",  slots:35, lat:28.6285, lng:77.2410, cluster:"MCD Central",         hourly:15, slotsEnabled:true},
+      {id:"del-z4", name:"Nehru Place Market - 4W",         vt:"4W", tariff:"flat",        slots:50, lat:28.5494, lng:77.2519, cluster:"MCD South",           base:20,  slotsEnabled:false},
+      {id:"del-z5", name:"Hauz Khas Village - 4W",          vt:"4W", tariff:"progressive", slots:18, lat:28.5535, lng:77.1945, cluster:"MCD South",           prog:[20,25,30,30], slotsEnabled:true},
+      {id:"del-z6", name:"Sarojini Nagar - 2W",             vt:"2W", tariff:"time_based",  slots:40, lat:28.5735, lng:77.1967, cluster:"New Delhi (NDMC)",    hourly:10, slotsEnabled:false},
+      {id:"del-z7", name:"Karol Bagh Ajmal Khan Rd - 2W",   vt:"2W", tariff:"flat",        slots:45, lat:28.6512, lng:77.1907, cluster:"MCD Karol Bagh",      base:10,  slotsEnabled:false},
+      {id:"del-z8", name:"Chandni Chowk Fatehpuri - 2W",    vt:"2W", tariff:"flat",        slots:30, lat:28.6506, lng:77.2303, cluster:"MCD City",            base:10,  slotsEnabled:false},
+    ]},
+  che:{name:"Chennai", ulb:"Greater Chennai Corporation", plate:"TN09AB1234", rate:15, radiusFloor:4000,
+    center:{lat:13.0700,lng:80.2600},
+    presets:[{name:"T. Nagar",lat:13.0418,lng:80.2341},{name:"Anna Nagar",lat:13.0850,lng:80.2101},{name:"Marina",lat:13.0500,lng:80.2820}],
+    zones:[
+      {id:"che-z1", name:"T. Nagar Usman Road - 4W",       vt:"4W", tariff:"progressive", slots:25, lat:13.0418, lng:80.2341, cluster:"T. Nagar commercial", prog:[20,20,30,30], slotsEnabled:true},
+      {id:"che-z2", name:"Anna Nagar Tower Park - 4W",     vt:"4W", tariff:"time_based",  slots:30, lat:13.0850, lng:80.2101, cluster:"Anna Nagar",          hourly:15, slotsEnabled:false},
+      {id:"che-z3", name:"Pondy Bazaar - 2W",              vt:"2W", tariff:"flat",        slots:50, lat:13.0390, lng:80.2310, cluster:"T. Nagar commercial", base:10,  slotsEnabled:false},
+      {id:"che-z4", name:"Marina Service Road - 4W",       vt:"4W", tariff:"time_based",  slots:40, lat:13.0500, lng:80.2820, cluster:"Triplicane",          hourly:15, slotsEnabled:false},
+      {id:"che-z5", name:"George Town NSC Bose Rd - 2W",   vt:"2W", tariff:"flat",        slots:35, lat:13.0930, lng:80.2870, cluster:"George Town",         base:10,  slotsEnabled:false},
+      {id:"che-z6", name:"Adyar Sardar Patel Rd - 4W",     vt:"4W", tariff:"time_based",  slots:22, lat:13.0067, lng:80.2560, cluster:"Adyar",               hourly:15, slotsEnabled:true},
+      {id:"che-z7", name:"Nungambakkam Khader Nawaz - 4W", vt:"4W", tariff:"progressive", slots:18, lat:13.0560, lng:80.2520, cluster:"Nungambakkam",        prog:[20,25,30,30], slotsEnabled:false},
+      {id:"che-z8", name:"Velachery Bypass - 2W",          vt:"2W", tariff:"flat",        slots:45, lat:12.9790, lng:80.2210, cluster:"Velachery",           base:10,  slotsEnabled:false},
+    ]},
+  blr:{name:"Bengaluru", ulb:"BBMP", plate:"KA05AB1234", rate:20, radiusFloor:4500,
+    center:{lat:12.9750,lng:77.6060},
+    presets:[{name:"MG Road",lat:12.9750,lng:77.6060},{name:"Indiranagar",lat:12.9719,lng:77.6412},{name:"Koramangala",lat:12.9345,lng:77.6266}],
+    zones:[
+      {id:"blr-z1", name:"MG Road - 4W",             vt:"4W", tariff:"progressive", slots:35, lat:12.9750, lng:77.6060, cluster:"Central business district", prog:[20,20,40,40], slotsEnabled:false},
+      {id:"blr-z2", name:"Indiranagar 100 Ft Rd - 4W", vt:"4W", tariff:"progressive", slots:28, lat:12.9719, lng:77.6412, cluster:"Indiranagar",         prog:[20,20,30,30], slotsEnabled:true},
+      {id:"blr-z3", name:"Koramangala 5th Block - 4W", vt:"4W", tariff:"time_based",  slots:30, lat:12.9345, lng:77.6266, cluster:"Koramangala",         hourly:20, slotsEnabled:false},
+      {id:"blr-z4", name:"Commercial Street - 2W",   vt:"2W", tariff:"flat",        slots:40, lat:12.9770, lng:77.6075, cluster:"CBD",                 base:10,  slotsEnabled:false},
+      {id:"blr-z5", name:"Jayanagar 4th Block - 2W", vt:"2W", tariff:"flat",        slots:45, lat:12.9299, lng:77.5826, cluster:"Jayanagar",           base:10,  slotsEnabled:false},
+      {id:"blr-z6", name:"Malleshwaram 8th Cross - 2W", vt:"2W", tariff:"time_based", slots:32, lat:13.0027, lng:77.5700, cluster:"Malleshwaram",        hourly:10, slotsEnabled:false},
+      {id:"blr-z7", name:"KSR Majestic Circle - 4W", vt:"4W", tariff:"flat",        slots:38, lat:12.9774, lng:77.5726, cluster:"Majestic",            base:20,  slotsEnabled:true},
+      {id:"blr-z8", name:"Whitefield ITPL Main Rd - 4W", vt:"4W", tariff:"time_based", slots:55, lat:12.9857, lng:77.7360, cluster:"Whitefield",       hourly:15, slotsEnabled:true},
+    ]},
+};
+let currentCity = "bbs";
+let city = CITIES[currentCity];
+function seedCity(){ city.zones.forEach(z=>{ z.active = Math.floor(z.slots*(0.15+Math.random()*0.5)); }); }
+seedCity();
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c=="x"?r:(r&0x3|0x8)).toString(16);}));
+const money = n => "₹"+n;
+
+/* ================= state ================= */
+let state = null;
+function freshState(){
+  return {
+    t0: performance.now(),
+    calls:0, fields:0, ident:0,
+    search:null, selected:null, booking:null, paid:false, extended:false,
+    sessionStart:null, sessionEnd:null, baseAmount:0, extendAmount:0,
+    profile:{lat:CITIES[currentCity].center.lat, lng:CITIES[currentCity].center.lng, radius:500, vt:"4W", plate:CITIES[currentCity].plate, phone:"9876543210", email:"rider@example.com", duration:120},
+    cancelled:false, done:false
+  };
+}
+
+/* ================= ledger ================= */
+const TAGS = {loc:"loc", veh:"veh", con:"con", fin:"fin", beh:"beh"};
+function log(endpoint, method, fields){
+  state.calls++;
+  const ledger = document.getElementById("ledger");
+  const empty = ledger.querySelector(".empty"); if(empty) empty.remove();
+  const el = document.createElement("div");
+  el.className = "lentry";
+  const t = ((performance.now()-state.t0)/1000).toFixed(1);
+  let rows = "";
+  fields.forEach(f=>{
+    state.fields++;
+    if(f.ident) state.ident++;
+    rows += `<div class="frow"><span class="tag ${TAGS[f.tag]}">${f.tag}</span><span class="fname">${f.name}</span><span class="fval">= ${esc(String(f.value))}</span></div>`;
+  });
+  el.innerHTML = `<div class="ep"><span><span class="method">${method}</span> <span class="path">${endpoint}</span></span><span class="t">t+${t}s</span></div><div class="fields">${rows}</div>`;
+  ledger.prepend(el);
+  document.getElementById("c-calls").textContent = state.calls;
+  document.getElementById("c-fields").textContent = state.fields;
+  document.getElementById("c-ident").textContent = state.ident;
+  document.getElementById("clock").textContent = "t+"+t+"s";
+}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+/* ================= tariff ================= */
+function priceFor(zone, minutes){
+  const hrs = Math.max(1, Math.ceil(minutes/60));
+  if(zone.tariff==="flat") return zone.base;
+  if(zone.tariff==="progressive"){ let s=0; for(let i=0;i<hrs;i++) s += zone.prog[Math.min(i,zone.prog.length-1)]; return s; }
+  return zone.hourly*hrs;
+}
+function estimates(zone){
+  return {"1hr":priceFor(zone,60),"2hr":priceFor(zone,120),"3hr":priceFor(zone,180),"4hr":priceFor(zone,240)};
+}
+function dist(aLat,aLng,bLat,bLng){
+  const R=6371000, dLat=(bLat-aLat)*Math.PI/180, dLng=(bLng-aLng)*Math.PI/180;
+  const x=Math.sin(dLat/2)**2+Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return Math.round(2*R*Math.asin(Math.sqrt(x)));
+}
+
+/* ================= steps ================= */
+const STEPS = [
+  {key:"search",  ep:"/api/public/search",  method:"POST", label:"Search"},
+  {key:"select",  ep:"/api/public/select",  method:"POST", label:"Select"},
+  {key:"init",    ep:"/api/public/init",    method:"POST", label:"Init"},
+  {key:"confirm", ep:"/api/public/confirm", method:"POST", label:"Confirm"},
+  {key:"status",  ep:"/api/public/status",  method:"GET",  label:"Status"},
+  {key:"update",  ep:"/api/public/update",  method:"POST", label:"Update"},
+  {key:"cancel",  ep:"/api/public/cancel",  method:"POST", label:"Cancel"},
+];
+let currentStep = -1;
+let statusTimer = null, pulseTimer = null;
+
+function renderSteps(){
+  const el = document.getElementById("steps");
+  el.innerHTML = "";
+  STEPS.forEach((s,i)=>{
+    const b = document.createElement("button");
+    b.className = "step-btn";
+    b.innerHTML = `<span class="n">${i+1}</span>${s.label}`;
+    if(i < currentStep) b.classList.add("done");
+    if(i === currentStep && !state.done) b.classList.add("active");
+    const ready = i === currentStep && !state.done;
+    if(ready){ b.classList.add("ready"); b.onclick = ()=>runStep(i); }
+    el.appendChild(b);
+  });
+}
+
+function screen(title, html){
+  document.getElementById("screenlabel").textContent = "Screen · "+title;
+  document.getElementById("appcontent").innerHTML = html;
+}
+
+/* ---- step renderers ---- */
+function renderSearch(){
+  screen("search", `
+    <div class="fieldrow thirds">
+      <div class="fld"><label>City</label>
+        <select id="f-city">${Object.entries(CITIES).map(([k,c])=>`<option value="${k}" ${k===currentCity?"selected":""}>${c.name}</option>`).join("")}</select></div>
+      <div class="fld"><label>Preset location</label>
+        <select id="f-preset">${CITIES[currentCity].presets.map((p,i)=>`<option value="${i}" ${i===0?"selected":""}>${p.name}</option>`).join("")}</select></div>
+      <div class="fld"><label>Vehicle type</label>
+        <select id="f-vt"><option ${state.profile.vt==="4W"?"selected":""}>4W</option><option ${state.profile.vt==="2W"?"selected":""}>2W</option></select></div>
+    </div>
+    <div class="fieldrow thirds">
+      <div class="fld"><label>Latitude</label><input id="f-lat" type="number" step="0.0001" value="${state.profile.lat}"></div>
+      <div class="fld"><label>Longitude</label><input id="f-lng" type="number" step="0.0001" value="${state.profile.lng}"></div>
+      <div class="fld"><label>Radius (m)</label><input id="f-radius" type="number" min="50" max="8000" value="${state.profile.radius}"></div>
+    </div>
+    <div class="fieldrow"><div class="fld"><label>&nbsp;</label><button class="go" id="f-go">Find parking in ${CITIES[currentCity].name} →</button></div></div>`);
+  document.getElementById("f-city").onchange = e=>{ setCity(e.target.value); };
+  document.getElementById("f-preset").onchange = e=>{
+    const p = CITIES[currentCity].presets[e.target.value];
+    document.getElementById("f-lat").value = p.lat; document.getElementById("f-lng").value = p.lng;
+  };
+  document.getElementById("f-go").onclick = ()=>runStep(0);
+}
+
+function doSearch(){
+  const C = CITIES[currentCity];
+  state.profile.lat = parseFloat(document.getElementById("f-lat").value)||C.center.lat;
+  state.profile.lng = parseFloat(document.getElementById("f-lng").value)||C.center.lng;
+  state.profile.radius = parseInt(document.getElementById("f-radius").value)||500;
+  state.profile.vt = document.getElementById("f-vt").value;
+  const results = C.zones.filter(z=>z.vt===state.profile.vt)
+    .map(z=>({...z, distance:dist(state.profile.lat,state.profile.lng,z.lat,z.lng), free:Math.max(0,z.slots-z.active)}))
+    .filter(z=>z.distance<=Math.max(state.profile.radius, C.radiusFloor))
+    .sort((a,b)=>a.distance-b.distance);
+  state.search = results;
+  log("/api/public/search","POST",[
+    {name:"city", value:C.name+" · "+C.ulb, tag:"loc"},
+    {name:"latitude", value:state.profile.lat, tag:"loc", ident:true},
+    {name:"longitude", value:state.profile.lng, tag:"loc", ident:true},
+    {name:"radius_meters", value:state.profile.radius, tag:"loc"},
+    {name:"vehicle_type", value:state.profile.vt, tag:"veh"},
+    {name:"→ emitted back", value:results.length+" zones within radius, each with distance_meters, active_sessions, available_capacity, tariff", tag:"beh"},
+  ]);
+  screen("search results", results.length ? results.map((z,i)=>`
+    <div class="zonecard" data-i="${i}">
+      <div><div class="zn">${z.name}</div><div class="zm">${z.cluster} · ${z.tariff} tariff · ${z.distance} m away</div></div>
+      <div class="zr"><span class="free ${z.free>z.slots*0.4?"high":z.free>z.slots*0.15?"mid":"low"}">${z.free}/${z.slots} free</span><br><span style="color:var(--ink-faint)">from ${money(priceFor(z,60))}/hr</span></div>
+    </div>`).join("") : `<div class="waiting">No live zones in radius. Widen the search.</div>`);
+  document.querySelectorAll(".zonecard").forEach(c=>c.onclick=()=>selectZone(parseInt(c.dataset.i)));
+  showResp(STEPS[0], {success:true, data:results.slice(0,3).map(z=>({id:z.id,name:z.name,distance_meters:z.distance,available_capacity:z.free}))});
+}
+
+let pendingZone = null;
+function selectZone(i){
+  pendingZone = state.search[i];
+  currentStep = 1; renderSteps();
+  runStep(1);
+}
+
+function renderSelect(){
+  if(!pendingZone) pendingZone = state.search[0];
+  screen("zone detail", `
+    <div class="zonecard sel"><div><div class="zn">${pendingZone.name}</div><div class="zm">${pendingZone.cluster} · ${pendingZone.tariff} tariff</div></div>
+      <div class="zr">${pendingZone.free}/${pendingZone.slots} free</div></div>
+    <div class="kv"><span class="k">estimated 1hr</span><span class="v">${money(estimates(pendingZone)["1hr"])}</span></div>
+    <div class="kv"><span class="k">estimated 2hr</span><span class="v">${money(estimates(pendingZone)["2hr"])}</span></div>
+    <div class="kv"><span class="k">estimated 3hr</span><span class="v">${money(estimates(pendingZone)["3hr"])}</span></div>
+    <div class="kv"><span class="k">estimated 4hr</span><span class="v">${money(estimates(pendingZone)["4hr"])}</span></div>
+    <div style="margin-top:12px"><button class="go" id="f-book">Book this zone →</button></div>`);
+  document.getElementById("f-book").onclick = ()=>runStep(2);
+}
+
+function doSelect(){
+  if(!pendingZone) pendingZone = state.search[0];
+  state.selected = pendingZone;
+  const est = estimates(pendingZone);
+  log("/api/public/select","POST",[
+    {name:"zone_id", value:pendingZone.id+"  ("+pendingZone.name+")", tag:"loc"},
+    {name:"→ emitted back", value:"estimated prices for 1–4 hr"+(pendingZone.slotsEnabled?", slot availability":""), tag:"beh"},
+    {name:"interest signal", value:"user examined "+pendingZone.name+" pricing at t+"+((performance.now()-state.t0)/1000).toFixed(0)+"s", tag:"beh"},
+  ]);
+  screen("zone detail", `
+    <div class="zonecard sel"><div><div class="zn">${pendingZone.name}</div><div class="zm">${pendingZone.cluster} · ${pendingZone.tariff} tariff</div></div>
+      <div class="zr">${pendingZone.free}/${pendingZone.slots} free</div></div>
+    <div class="kv"><span class="k">estimated 1hr</span><span class="v">${money(est["1hr"])}</span></div>
+    <div class="kv"><span class="k">estimated 2hr</span><span class="v">${money(est["2hr"])}</span></div>
+    <div class="kv"><span class="k">estimated 3hr</span><span class="v">${money(est["3hr"])}</span></div>
+    <div class="kv"><span class="k">estimated 4hr</span><span class="v">${money(est["4hr"])}</span></div>
+    <div style="margin-top:12px"><button class="go" id="f-book">Book this zone →</button></div>`);
+  document.getElementById("f-book").onclick = ()=>runStep(2);
+  showResp(STEPS[1], {success:true, data:{zone:{id:pendingZone.id,name:pendingZone.name,tariff_type:pendingZone.tariff,slot_count:pendingZone.slots}, estimated_prices:est, slots_enabled:pendingZone.slotsEnabled}});
+}
+
+function renderInit(){
+  screen("booking details", `
+    <div class="fieldrow">
+      <div class="fld"><label>Vehicle plate</label><input id="f-plate" value="${state.profile.plate}"></div>
+      <div class="fld"><label>Vehicle type</label>
+        <select id="f-vt2"><option ${state.profile.vt==="4W"?"selected":""}>4W</option><option ${state.profile.vt==="2W"?"selected":""}>2W</option></select></div>
+    </div>
+    <div class="fieldrow">
+      <div class="fld"><label>Customer phone</label><input id="f-phone" value="${state.profile.phone}"></div>
+      <div class="fld"><label>Customer email</label><input id="f-email" value="${state.profile.email}"></div>
+    </div>
+    <div class="fieldrow">
+      <div class="fld"><label>Duration (minutes)</label><input id="f-dur" type="number" min="30" step="15" value="${state.profile.duration}"></div>
+      <div class="fld"><label>&nbsp;</label><button class="go" id="f-init">Create booking →</button></div>
+    </div>`);
+  document.getElementById("f-init").onclick = ()=>{ state.profile.plate=document.getElementById("f-plate").value.trim()||"OD02AB1234"; state.profile.phone=document.getElementById("f-phone").value.trim(); state.profile.email=document.getElementById("f-email").value.trim(); state.profile.duration=parseInt(document.getElementById("f-dur").value)||120; runStep(2); };
+}
+
+function doInit(){
+  const z = state.selected;
+  const amt = priceFor(z, state.profile.duration);
+  const now = new Date();
+  const end = new Date(now.getTime()+state.profile.duration*60000);
+  state.booking = {session_id:uid(), amount:amt, currency:"INR",
+    payment_link:"https://pay.juspay.in/pw_"+Math.random().toString(36).slice(2,14),
+    expires_at:new Date(now.getTime()+15*60000).toISOString(), start_time:now.toISOString(), end_time:end.toISOString()};
+  state.baseAmount = amt; state.sessionStart = now; state.sessionEnd = end;
+  const idf = v => ({ident:true});
+  log("/api/public/init","POST",[
+    {name:"vehicle_plate", value:state.profile.plate, tag:"veh", ident:true},
+    {name:"vehicle_type", value:state.profile.vt, tag:"veh"},
+    {name:"zone_id", value:z.name, tag:"loc"},
+    {name:"city", value:CITIES[currentCity].name, tag:"loc"},
+    {name:"customer_phone", value:state.profile.phone, tag:"con", ident:true},
+    {name:"customer_email", value:state.profile.email, tag:"con", ident:true},
+    {name:"duration_minutes", value:state.profile.duration, tag:"beh"},
+    {name:"amount", value:money(amt)+" (currency INR)", tag:"fin"},
+  ]);
+  screen("payment", `
+    <div class="kv"><span class="k">zone</span><span class="v">${z.name}</span></div>
+    <div class="kv"><span class="k">plate</span><span class="v">${esc(state.profile.plate)}</span></div>
+    <div class="kv"><span class="k">duration</span><span class="v">${state.profile.duration} min</span></div>
+    <div class="kv"><span class="k">amount</span><span class="v">${money(amt)}</span></div>
+    <div style="margin-top:12px" class="paybox">
+      <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;color:var(--ink-faint);margin-bottom:4px">JUSPAY PAYMENT LINK (SIMULATED)</div>
+      <div class="plink">${state.booking.payment_link}</div>
+      <div class="exp">expires ${new Date(state.booking.expires_at).toLocaleTimeString()} · slot ${z.slotsEnabled?"A3":"pool"} held until then</div>
+    </div>`);
+  showResp(STEPS[2], {success:true, data:{session_id:state.booking.session_id, amount:amt, currency:"INR", payment_link:state.booking.payment_link, expires_at:state.booking.expires_at}});
+}
+
+function doConfirm(){
+  screen("confirming payment", `<div class="waiting">Polling /confirm · payment_status: <span id="paystate" style="color:var(--sign)">pending…</span></div>`);
+  let polls = 0;
+  const poll = ()=>{
+    polls++;
+    if(polls < 3){ document.getElementById("paystate").textContent = "pending"+"…".repeat(polls); setTimeout(poll, 900); return; }
+    state.paid = true;
+    log("/api/public/confirm","POST",[
+      {name:"session_id", value:state.booking.session_id.slice(0,8)+"…", tag:"beh"},
+      {name:"payment_status", value:"paid ← webhook + poll race", tag:"fin"},
+      {name:"confirmed", value:"true · session ACTIVE", tag:"fin", ident:true},
+    ]);
+    screen("session live", sessionCard());
+    startCountdown();
+    showResp(STEPS[3], {success:true, data:{session_id:state.booking.session_id, payment_status:"paid", confirmed:true, zone_name:state.selected.name, vehicle_plate:state.profile.plate, amount:state.baseAmount}});
+    next(4);
+  };
+  setTimeout(poll, 900);
+}
+
+function sessionCard(){
+  const rem = remainingMin();
+  return `<div class="sessionlive">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+      <div class="screenlabel" style="margin:0">Session · active</div>
+      <span class="paidstamp">PAID</span>
+    </div>
+    <div class="bigtime" id="bigtime">${fmtRem(rem)}</div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-bottom:10px">remaining in ${esc(state.selected.name)}</div>
+    <div class="kv"><span class="k">vehicle</span><span class="v">${esc(state.profile.plate)} · ${state.profile.vt}</span></div>
+    <div class="kv"><span class="k">ends at</span><span class="v" id="endat">${state.sessionEnd.toLocaleTimeString()}</span></div>
+    <div class="kv"><span class="k">paid so far</span><span class="v" id="paidamt">${money(state.baseAmount + state.extendAmount)}</span></div>
+  </div>`;
+}
+function remainingMin(){ return Math.max(0, Math.round((state.sessionEnd - Date.now())/60000)); }
+function fmtRem(min){ const h=Math.floor(min/60), m=min%60; return h>0? h+"h "+String(m).padStart(2,"0")+"m" : m+"m"; }
+function startCountdown(){
+  if(statusTimer) clearInterval(statusTimer);
+  statusTimer = setInterval(()=>{
+    const el = document.getElementById("bigtime");
+    if(!el) { clearInterval(statusTimer); return; }
+    el.textContent = fmtRem(remainingMin());
+  }, 1000);
+}
+
+function doStatus(){
+  const rem = remainingMin();
+  log("/api/public/status","GET",[
+    {name:"session_id", value:state.booking.session_id.slice(0,8)+"…", tag:"beh"},
+    {name:"remaining_minutes", value:rem+" · status: active", tag:"beh"},
+    {name:"→ observation", value:"platform + app now agree on where this plate is, until when", tag:"beh", ident:true},
+  ]);
+  screen("session live", sessionCard());
+  showResp(STEPS[4], {success:true, data:{session_id:state.booking.session_id, status:"active", zone_name:state.selected.name, vehicle_plate:state.profile.plate, remaining_minutes:rem, payment_status:"paid"}});
+  next(5);
+}
+
+function doUpdate(){
+  const add = 60;
+  const z = state.selected;
+  const addAmt = priceFor(z, add);
+  state.extendAmount += addAmt;
+  state.sessionEnd = new Date(state.sessionEnd.getTime()+add*60000);
+  log("/api/public/update","POST",[
+    {name:"session_id", value:state.booking.session_id.slice(0,8)+"…", tag:"beh"},
+    {name:"extend_minutes", value:add, tag:"beh"},
+    {name:"additional_amount", value:money(addAmt)+" → total "+money(state.baseAmount+state.extendAmount), tag:"fin"},
+    {name:"behaviour note", value:"plans changed; new end_time "+state.sessionEnd.toLocaleTimeString(), tag:"beh"},
+  ]);
+  screen("session extended", `
+    <div class="paybox" style="margin-bottom:12px">
+      <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;color:var(--ink-faint);margin-bottom:4px">EXTENSION PAYMENT LINK (SIMULATED)</div>
+      <div class="plink">https://pay.juspay.in/pw_${Math.random().toString(36).slice(2,14)}</div>
+      <div class="exp">extension confirmed via webhook · end_time now ${state.sessionEnd.toLocaleTimeString()}</div>
+    </div>` + sessionCard());
+  showResp(STEPS[5], {success:true, data:{session_id:state.booking.session_id, new_end_time:state.sessionEnd.toISOString(), additional_amount:addAmt, total_amount:state.baseAmount+state.extendAmount, currency:"INR"}});
+  next(6);
+}
+
+function doCancel(){
+  const actual = Math.max(5, Math.round((Date.now()-state.sessionStart.getTime())/60000));
+  const finalAmt = priceFor(state.selected, actual);
+  log("/api/public/cancel","POST",[
+    {name:"session_id", value:state.booking.session_id.slice(0,8)+"…", tag:"beh"},
+    {name:"actual duration parked", value:actual+" min (booked "+state.profile.duration+" min)", tag:"beh"},
+    {name:"final_amount", value:money(finalAmt)+" — refund of prepaid time depends on city policy", tag:"fin"},
+    {name:"departure time", value:new Date().toLocaleTimeString()+" · exact, platform-recorded", tag:"beh", ident:true},
+  ]);
+  screen("ended", `
+    <div class="sessionlive">
+      <div class="screenlabel" style="margin-bottom:10px">Session · ended early</div>
+      <div class="kv"><span class="k">original end</span><span class="v">${state.sessionEnd.toLocaleTimeString()}</span></div>
+      <div class="kv"><span class="k">actual exit</span><span class="v">${new Date().toLocaleTimeString()}</span></div>
+      <div class="kv"><span class="k">duration parked</span><span class="v">${actual} min</span></div>
+      <div class="kv"><span class="k">final amount</span><span class="v">${money(finalAmt)}</span></div>
+      <div style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--ink-faint)">Slot released to the pool. The platform keeps the record.</div>
+    </div>`);
+  showResp(STEPS[6], {success:true, data:{session_id:state.booking.session_id, actual_end_time:new Date().toISOString(), final_amount:finalAmt, duration_minutes:actual}});
+  state.done = true; currentStep = 7; renderSteps();
+  document.getElementById("autorun").disabled = true;
+}
+
+function showResp(step, obj){
+  const el = document.getElementById("resp");
+  const lat = 120+Math.floor(Math.random()*480);
+  el.innerHTML = `<span class="rl">${step.method} ${step.ep}</span> <span class="ok">200 OK</span> <span class="latency">· ${lat}ms · X-API-Key: pk_test_•••• (simulated)</span>\n${esc(JSON.stringify(obj,null,2))}`;
+}
+function next(i){ currentStep = i; renderSteps(); renderCurrent(); }
+function renderCurrent(){
+  if(state.done) return;
+  const key = STEPS[currentStep]?.key;
+  if(key==="search") renderSearch();
+  else if(key==="select") renderSelect();
+  else if(key==="init") renderInit();
+  else if(key==="confirm") screen("awaiting confirm", `<div class="waiting">Payment link open on the customer's phone.<br>Press Confirm to poll for payment.</div>`);
+  else if(key==="status") screen("session live", sessionCard());
+  else if(key==="update") screen("extend?", `<div class="waiting">Press Update to extend by 60 minutes.</div>`);
+  else if(key==="cancel") screen("leave early?", `<div class="waiting">Press Cancel to end the session and settle.</div>`);
+}
+
+/* ================= orchestration ================= */
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+async function runStep(i){
+  const key = STEPS[i].key;
+  if(i===0) doSearch();
+  else if(i===1) doSelect();
+  else if(i===2) doInit();
+  else if(i===3) doConfirm();
+  else if(i===4) doStatus();
+  else if(i===5) doUpdate();
+  else if(i===6) doCancel();
+  if(i!==0 && i!==2 && key!=="confirm" && i!==1){ /* steps that auto-advance handled internally */ }
+  if(i===0 || i===2){ currentStep = i+1; renderSteps(); renderCurrent(); }
+}
+async function autoRun(){
+  const btn = document.getElementById("autorun");
+  btn.disabled = true;
+  try{
+    await runStep(0); await sleep(1600);
+    await runStep(1); await sleep(1600);
+    await runStep(2); await sleep(2000);
+    await runStep(3); /* confirm self-advances after payment poll */
+    const waitActive = ()=>new Promise(res=>{
+      const iv = setInterval(()=>{ if(currentStep>=4){clearInterval(iv);res();} },200);
+    });
+    await waitActive(); await sleep(2200);
+    await runStep(4); await sleep(1800);
+    await runStep(5); await sleep(1800);
+    await runStep(6);
+  }catch(e){
+    console.error("session sim error:", e);
+    document.getElementById("resp").innerHTML = '<span class="rl">SIMULATION ERROR</span> '+esc(String((e&&e.stack)||e));
+    document.getElementById("autorun").disabled = false;
+  }
+}
+
+/* ================= city pulse ================= */
+function renderCity(){
+  document.getElementById("pulse-city").textContent = city.name;
+  document.getElementById("ulb-name").textContent = city.ulb;
+  const grid = document.getElementById("citygrid");
+  const lats = city.zones.map(z=>z.lat), lngs = city.zones.map(z=>z.lng);
+  const minLat=Math.min(...lats), maxLat=Math.max(...lats), minLng=Math.min(...lngs), maxLng=Math.max(...lngs);
+  grid.querySelectorAll(".zdot").forEach(d=>d.remove());
+  city.zones.forEach((z,idx)=>{
+    const x = 12 + ((z.lng-minLng)/(maxLng-minLng))*76;
+    const y = 82 - ((z.lat-minLat)/(maxLat-minLat))*70;
+    const occ = z.active/z.slots;
+    const size = 10+occ*22;
+    const d = document.createElement("div");
+    d.className = "zdot";
+    d.style.left = x+"%"; d.style.top = y+"%";
+    d.innerHTML = `<div class="dot" style="width:${size}px;height:${size}px;background:rgba(255,196,0,${0.12+occ*0.5});${occ>0.75?"border-color:var(--red);":""}"></div><div class="zl">${z.name.split(" - ")[0]}</div>`;
+    grid.appendChild(d);
+  });
+  const totSlots = city.zones.reduce((s,z)=>s+z.slots,0), totActive = city.zones.reduce((s,z)=>s+z.active,0);
+  document.getElementById("agg-sessions").textContent = totActive;
+  document.getElementById("agg-occ").textContent = Math.round(totActive/totSlots*100)+"%";
+  document.getElementById("agg-rev").textContent = "₹"+(totActive*CITIES[currentCity].rate).toLocaleString("en-IN");
+  const bars = document.getElementById("zonebars");
+  bars.innerHTML = city.zones.map(z=>{
+    const occ = Math.round(z.active/z.slots*100);
+    return `<div class="zbar"><div class="zl"><span>${z.name}</span><span>${z.active}/${z.slots} · ${occ}%</span></div>
+      <div class="track"><div class="fill ${occ>75?"hot":""}" style="width:${occ}%"></div></div></div>`;
+  }).join("");
+}
+function pulse(){
+  city.zones.forEach(z=>{
+    const delta = Math.random()<0.5?-1:1;
+    z.active = Math.max(0, Math.min(z.slots, z.active + (Math.random()<0.6?delta:0)));
+  });
+  renderCity();
+}
+
+/* ================= city switching ================= */
+function setCity(key){
+  if(!CITIES[key]) return;
+  currentCity = key; city = CITIES[key];
+  seedCity(); reset(); renderCity();
+}
+
+/* ================= boot ================= */
+function reset(){
+  if(statusTimer) clearInterval(statusTimer);
+  state = freshState(); currentStep = 0;
+  document.getElementById("resp").innerHTML = "";
+  document.getElementById("ledger").innerHTML = `<div class="empty">Nothing collected yet.<br>Every action on the left is mirrored here as the data it emits.</div>`;
+  document.getElementById("c-calls").textContent="0"; document.getElementById("c-fields").textContent="0"; document.getElementById("c-ident").textContent="0";
+  document.getElementById("clock").textContent="t+0.0s";
+  document.getElementById("autorun").disabled = false;
+  renderSteps(); renderCurrent();
+}
+document.getElementById("autorun").onclick = autoRun;
+document.getElementById("reset").onclick = reset;
+reset();
+renderCity();
+pulseTimer = setInterval(pulse, 3000);
+</script>
+</body>
+</html>

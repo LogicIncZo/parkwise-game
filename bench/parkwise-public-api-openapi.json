@@ -1,0 +1,971 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "ParkWise Public API",
+  "version": "1.0.0",
+  "description": "API for third-party applications to integrate parking services.\n\nParkWise enables urban local bodies to govern, monetise and manage urban parking. Third-party apps (BAPs) can search parking, book sessions, process payments, and check session status through these APIs.\n\n## Authentication\nAll requests require an API key passed in the `X-API-Key` header. Generate keys from your city dashboard at Settings \u2192 API Keys.\n\n## Booking Flow\n1. **Search** \u2192 Find available zones near a location\n2. **Select** \u2192 Get pricing details for a zone\n3. **Init** \u2192 Create a booking and get a payment link\n4. **Confirm** \u2192 Verify payment and activate the session\n5. **Status** \u2192 Check session status anytime\n6. **Update** \u2192 Extend session duration\n7. **Cancel** \u2192 End session early",
+  "contact": {
+   "name": "ParkWise Developer Support",
+   "email": "developers@parkwise.city"
+  }
+ },
+ "servers": [
+  {
+   "url": "https://api.parkwise.city",
+   "description": "Production"
+  },
+  {
+   "url": "https://api-sandbox.parkwise.city",
+   "description": "Sandbox"
+  },
+  {
+   "url": "http://localhost:4000",
+   "description": "Local Development"
+  }
+ ],
+ "components": {
+  "securitySchemes": {
+   "ApiKeyAuth": {
+    "type": "apiKey",
+    "in": "header",
+    "name": "X-API-Key",
+    "description": "API key for authentication. Prefix: pk_test_ (sandbox) or pk_live_ (production)"
+   }
+  },
+  "schemas": {
+   "Error": {
+    "type": "object",
+    "properties": {
+     "error": {
+      "type": "string"
+     },
+     "message": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ },
+ "security": [
+  {
+   "ApiKeyAuth": []
+  }
+ ],
+ "tags": [
+  {
+   "name": "Search & Discovery",
+   "description": "Find available parking zones"
+  },
+  {
+   "name": "Booking",
+   "description": "Initialize and confirm parking bookings"
+  },
+  {
+   "name": "Session Management",
+   "description": "Check status, extend, or cancel sessions"
+  }
+ ],
+ "paths": {
+  "/api/public/search": {
+   "post": {
+    "tags": [
+     "Search & Discovery"
+    ],
+    "summary": "Search available parking zones",
+    "description": "Find parking zones near a given location. Returns live zones within the\nspecified radius, sorted by distance from the search point. Each result\nincludes zone metadata, cluster info, current availability, and base tariff.\n",
+    "security": [
+     {
+      "ApiKeyAuth": []
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "latitude",
+         "longitude"
+        ],
+        "properties": {
+         "latitude": {
+          "type": "number",
+          "description": "Search center latitude",
+          "example": 20.2961
+         },
+         "longitude": {
+          "type": "number",
+          "description": "Search center longitude",
+          "example": 85.8245
+         },
+         "radius_meters": {
+          "type": "integer",
+          "default": 500,
+          "maximum": 5000,
+          "description": "Search radius in meters (default 500, max 5000)"
+         },
+         "vehicle_type": {
+          "type": "string",
+          "enum": [
+           "2W",
+           "4W"
+          ],
+          "description": "Filter by vehicle type"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "List of matching zones sorted by distance",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          },
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid"
+             },
+             "name": {
+              "type": "string",
+              "example": "Saheed Nagar Main Road - 4W"
+             },
+             "vehicle_type": {
+              "type": "string",
+              "enum": [
+               "2W",
+               "4W"
+              ]
+             },
+             "tariff_type": {
+              "type": "string",
+              "enum": [
+               "flat",
+               "progressive",
+               "time_based"
+              ]
+             },
+             "slot_count": {
+              "type": "integer",
+              "example": 25
+             },
+             "cluster_name": {
+              "type": "string",
+              "example": "Saheed Nagar Commercial"
+             },
+             "distance_meters": {
+              "type": "number",
+              "example": 142.5
+             },
+             "active_sessions": {
+              "type": "integer",
+              "description": "Number of currently active parking sessions"
+             },
+             "available_capacity": {
+              "type": "integer",
+              "description": "Remaining spots (slot_count minus active sessions)"
+             },
+             "tariff_summary": {
+              "type": "object",
+              "description": "Base tariff information"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Invalid or missing API key",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/public/select": {
+   "post": {
+    "tags": [
+     "Search & Discovery"
+    ],
+    "summary": "Get zone details and pricing",
+    "description": "Retrieve detailed information about a specific zone including estimated\npricing for common durations (1hr, 2hr, 3hr, 4hr). If the zone has\nindividual slots enabled, available slots are also returned.\n",
+    "security": [
+     {
+      "ApiKeyAuth": []
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "zone_id"
+        ],
+        "properties": {
+         "zone_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "ID of the zone to get details for"
+         },
+         "slot_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Optional specific slot to check availability"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Zone details with pricing",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          },
+          "data": {
+           "type": "object",
+           "properties": {
+            "zone": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "format": "uuid"
+              },
+              "name": {
+               "type": "string",
+               "example": "Janpath Road - 4W"
+              },
+              "vehicle_type": {
+               "type": "string",
+               "example": "4W"
+              },
+              "tariff_type": {
+               "type": "string",
+               "example": "progressive"
+              },
+              "slot_count": {
+               "type": "integer",
+               "example": 30
+              },
+              "cluster_name": {
+               "type": "string",
+               "example": "Unit 1 Market Area"
+              }
+             }
+            },
+            "estimated_prices": {
+             "type": "object",
+             "description": "Estimated prices in INR for common durations",
+             "properties": {
+              "1hr": {
+               "type": "number",
+               "example": 20
+              },
+              "2hr": {
+               "type": "number",
+               "example": 40
+              },
+              "3hr": {
+               "type": "number",
+               "example": 70
+              },
+              "4hr": {
+               "type": "number",
+               "example": 100
+              }
+             }
+            },
+            "slots_enabled": {
+             "type": "boolean",
+             "description": "Whether individual slot selection is required"
+            },
+            "available_slots": {
+             "type": "array",
+             "description": "Available slots (only present when slots_enabled is true)",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "format": "uuid"
+               },
+               "slot_number": {
+                "type": "string",
+                "example": "A3"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Invalid or missing API key",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Zone not found or not live",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/public/init": {
+   "post": {
+    "tags": [
+     "Booking"
+    ],
+    "summary": "Create booking and get payment link",
+    "description": "Initialize a parking session by specifying a zone, vehicle details, and\ndesired duration. Returns a Juspay payment link that the customer must\ncomplete to activate the session. The payment link expires after 15 minutes.\n\nIf the zone requires slot selection (`slots_enabled`), a `slot_id` must be\nprovided. The slot will be temporarily reserved until payment is confirmed\nor the link expires.\n",
+    "security": [
+     {
+      "ApiKeyAuth": []
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "zone_id",
+         "vehicle_plate",
+         "vehicle_type",
+         "duration_minutes"
+        ],
+        "properties": {
+         "zone_id": {
+          "type": "string",
+          "format": "uuid"
+         },
+         "slot_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Required when zone has slots enabled"
+         },
+         "vehicle_plate": {
+          "type": "string",
+          "example": "OD02AB1234",
+          "description": "Indian vehicle registration number"
+         },
+         "vehicle_type": {
+          "type": "string",
+          "enum": [
+           "2W",
+           "4W"
+          ]
+         },
+         "duration_minutes": {
+          "type": "integer",
+          "minimum": 30,
+          "example": 120,
+          "description": "Parking duration in minutes. Minimum 30; the maximum is the zone's configured limit (max_booking_minutes), defaulting to 1440 (24h)."
+         },
+         "customer_phone": {
+          "type": "string",
+          "example": "9876543210"
+         },
+         "customer_email": {
+          "type": "string",
+          "format": "email"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Booking created with payment link",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          },
+          "data": {
+           "type": "object",
+           "properties": {
+            "session_id": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "amount": {
+             "type": "number",
+             "example": 40
+            },
+            "currency": {
+             "type": "string",
+             "example": "INR"
+            },
+            "payment_link": {
+             "type": "string",
+             "format": "uri",
+             "example": "https://pay.juspay.in/pw_abc123def456"
+            },
+            "expires_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Payment link expiry (15 minutes from creation)"
+            },
+            "start_time": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "end_time": {
+             "type": "string",
+             "format": "date-time"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Invalid request (missing fields, zone not live, slot unavailable)",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Invalid or missing API key",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/public/confirm": {
+   "post": {
+    "tags": [
+     "Booking"
+    ],
+    "summary": "Check payment and confirm booking",
+    "description": "After the customer has completed payment via the Juspay link, call this\nendpoint to verify payment status and confirm the parking session. Returns\nthe current booking status.\n\nNote: Payment confirmation also happens automatically via Juspay webhooks.\nThis endpoint can be polled to check status from the client side.\n",
+    "security": [
+     {
+      "ApiKeyAuth": []
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "session_id"
+        ],
+        "properties": {
+         "session_id": {
+          "type": "string",
+          "format": "uuid"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Booking confirmation status",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          },
+          "data": {
+           "type": "object",
+           "properties": {
+            "session_id": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "payment_status": {
+             "type": "string",
+             "enum": [
+              "pending",
+              "paid",
+              "failed"
+             ],
+             "example": "paid"
+            },
+            "confirmed": {
+             "type": "boolean",
+             "description": "True if payment is confirmed and session is active",
+             "example": true
+            },
+            "zone_name": {
+             "type": "string",
+             "example": "Master Canteen Road - 4W"
+            },
+            "vehicle_plate": {
+             "type": "string",
+             "example": "OD02CD5678"
+            },
+            "start_time": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "end_time": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "amount": {
+             "type": "number",
+             "example": 40
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Invalid or missing API key",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Session not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/public/status": {
+   "get": {
+    "tags": [
+     "Session Management"
+    ],
+    "summary": "Get parking session status",
+    "description": "Retrieve the current status of a parking session including remaining time,\npayment status, and zone details. Use this to display session info to the\ncustomer or to check if a session is still active.\n",
+    "security": [
+     {
+      "ApiKeyAuth": []
+     }
+    ],
+    "parameters": [
+     {
+      "in": "query",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The parking session ID"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Session status",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          },
+          "data": {
+           "type": "object",
+           "properties": {
+            "session_id": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "status": {
+             "type": "string",
+             "enum": [
+              "pending_payment",
+              "active",
+              "expired",
+              "cancelled"
+             ],
+             "example": "active"
+            },
+            "zone_name": {
+             "type": "string",
+             "example": "Patia Square - 2W"
+            },
+            "slot_number": {
+             "type": "string",
+             "nullable": true,
+             "example": "B7"
+            },
+            "vehicle_plate": {
+             "type": "string",
+             "example": "OD02EF9012"
+            },
+            "vehicle_type": {
+             "type": "string",
+             "enum": [
+              "2W",
+              "4W"
+             ]
+            },
+            "start_time": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "end_time": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "remaining_minutes": {
+             "type": "integer",
+             "description": "Minutes remaining (0 if expired or not active)",
+             "example": 47
+            },
+            "amount": {
+             "type": "number",
+             "example": 20
+            },
+            "payment_status": {
+             "type": "string",
+             "enum": [
+              "pending",
+              "paid",
+              "failed"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Invalid or missing API key",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Session not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/public/cancel": {
+   "post": {
+    "tags": [
+     "Session Management"
+    ],
+    "summary": "Cancel or end a parking session",
+    "description": "End a parking session early. The session end time is updated to the current\ntime. If the zone uses individual slots, the slot is released back to the\navailable pool. The final amount reflects the actual duration parked.\n\nNote: Refunds for prepaid time are not automatic. The `final_amount` reflects\nthe charge for actual usage. Refund processing depends on city policy.\n",
+    "security": [
+     {
+      "ApiKeyAuth": []
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "session_id"
+        ],
+        "properties": {
+         "session_id": {
+          "type": "string",
+          "format": "uuid"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Session ended successfully",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          },
+          "data": {
+           "type": "object",
+           "properties": {
+            "session_id": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "original_end_time": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "actual_end_time": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "final_amount": {
+             "type": "number",
+             "description": "Amount charged for actual usage",
+             "example": 20
+            },
+            "duration_minutes": {
+             "type": "integer",
+             "description": "Actual minutes parked",
+             "example": 45
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Session already ended or not in cancellable state",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Invalid or missing API key",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Session not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/public/update": {
+   "post": {
+    "tags": [
+     "Session Management"
+    ],
+    "summary": "Extend a parking session",
+    "description": "Extend an active parking session by a specified number of minutes.\nA new Juspay payment link is generated for the additional fee. The session\nend time is updated after payment is confirmed via webhook.\n\nThe additional amount is calculated based on the zone's tariff rules for\nthe extension period only.\n",
+    "security": [
+     {
+      "ApiKeyAuth": []
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "session_id",
+         "extend_minutes"
+        ],
+        "properties": {
+         "session_id": {
+          "type": "string",
+          "format": "uuid"
+         },
+         "extend_minutes": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 480,
+          "example": 60,
+          "description": "Additional minutes to extend the session"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Extension created with payment link",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          },
+          "data": {
+           "type": "object",
+           "properties": {
+            "session_id": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "new_end_time": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "additional_amount": {
+             "type": "number",
+             "example": 20
+            },
+            "total_amount": {
+             "type": "number",
+             "description": "Total amount including extension",
+             "example": 60
+            },
+            "currency": {
+             "type": "string",
+             "example": "INR"
+            },
+            "payment_link": {
+             "type": "string",
+             "format": "uri",
+             "description": "Juspay payment link for the extension fee"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Session not active or invalid extension",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Invalid or missing API key",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Session not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

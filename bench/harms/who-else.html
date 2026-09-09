@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who else is in the <span class='accent'>loop</span> · ParkWise Privacy Harms · Kaarana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--asphalt:#141412;--asphalt-2:#1b1b18;--panel:#201f1b;--edge:#33322b;--ink:#f2eee2;--dim:#a8a294;
+  --faint:#6e6a5e;--sign:#ffc400;--deep:#e0a800;--red:#ff6b5e;--green:#3fd68f;--cyan:#5bd7f5;--violet:#c2b4ff;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--disp:'Anton',sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--asphalt);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px}
+  .crumbs{font-family:var(--mono);font-size:12px;letter-spacing:.06em;padding:18px 0 0}
+  .crumbs a{color:var(--sign);text-decoration:none}
+  .crumbs a:hover{text-decoration:underline}
+  .crumbs .sep{color:var(--faint);margin:0 6px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--sign);margin-top:26px}
+  h1{font-family:var(--disp);font-weight:400;font-size:clamp(30px,5.4vw,54px);line-height:1.04;text-transform:uppercase;margin:12px 0 14px}
+  h1 .accent{color:var(--sign)}
+  .stand{color:var(--dim);font-size:17px;max-width:720px;margin-bottom:8px}
+  .stand b{color:var(--ink)}
+  .lane{height:12px;margin:30px 0;opacity:.5;background:repeating-linear-gradient(90deg,var(--faint) 0 34px,transparent 34px 62px)}
+  h2{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--sign);margin:30px 0 14px}
+  p{color:var(--dim);margin-bottom:14px}
+  p b,li b{color:var(--ink)}
+  p .inf{font-family:var(--mono);font-size:9.5px;color:var(--violet);border:1px solid rgba(194,180,255,.4);border-radius:3px;padding:1px 5px;letter-spacing:.08em;vertical-align:2px}
+  .specbox{border:1px solid var(--edge);border-left:3px solid var(--sign);border-radius:6px;background:var(--asphalt-2);padding:14px 16px;font-family:var(--mono);font-size:13px;margin-bottom:16px}
+  .specbox .fr{display:flex;gap:10px;padding:5px 0;border-bottom:1px dashed #2c2b25;flex-wrap:wrap}
+  .specbox .fr:last-child{border:none}
+  .specbox .fn{color:var(--dim);min-width:170px}
+  .specbox .fv{color:var(--ink)}
+  .tag{font-size:9px;font-weight:600;letter-spacing:.1em;border:1px solid;border-radius:3px;padding:1px 5px;text-transform:uppercase;white-space:nowrap}
+  .tag.loc{color:var(--cyan);border-color:rgba(91,215,245,.5)}
+  .tag.veh{color:var(--sign);border-color:rgba(255,196,0,.5)}
+  .tag.con{color:var(--red);border-color:rgba(255,107,94,.5)}
+  .tag.fin{color:var(--green);border-color:rgba(63,214,143,.5)}
+  .tag.beh{color:var(--violet);border-color:rgba(194,180,255,.5)}
+  .case{border:1px solid var(--edge);border-radius:8px;background:var(--panel);padding:16px 18px;margin-bottom:14px}
+  .case .when{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
+  .case p{margin-bottom:8px;font-size:15px}
+  .case p:last-child{margin-bottom:0}
+  sup a{color:var(--sign);text-decoration:none;font-family:var(--mono);font-size:11px}
+  ol.end{font-size:13px;color:var(--faint);padding-left:20px}
+  ol.end li{margin-bottom:6px}
+  ol.end a{color:var(--cyan);text-decoration:none;word-break:break-all}
+  ol.end a:hover{text-decoration:underline}
+  .ask{border:1px dashed var(--deep);border-radius:8px;padding:16px 18px;background:rgba(255,196,0,.05);margin-bottom:16px}
+  .ask ul{list-style:none}
+  .ask li{color:var(--dim);padding:6px 0 6px 26px;position:relative;border-bottom:1px dashed #2c2b25}
+  .ask li:last-child{border:none}
+  .ask li::before{content:"?";position:absolute;left:0;top:6px;color:var(--sign);font-family:var(--mono);font-weight:600}
+  .harmnav{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:26px 0 8px}
+  .harmnav a{border:1px solid var(--edge);border-radius:6px;padding:10px 12px;color:var(--dim);text-decoration:none;font-size:13px}
+  .harmnav a b{color:var(--ink);display:block;font-size:12px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+  .harmnav a:hover{border-color:var(--deep)}
+  .harmnav a.this{border-color:var(--sign);background:rgba(255,196,0,.07)}
+  footer{border-top:1px solid var(--edge);margin-top:34px;padding:18px 0 44px;font-family:var(--mono);font-size:11.5px;color:var(--faint);line-height:1.8}
+  footer a{color:var(--sign);text-decoration:none}
+  ::selection{background:var(--sign);color:#141412}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumbs"><a href="/parkwise-demo">← ParkWise simulator</a><span class="sep">·</span><a href="/parkwise-demo/spec">API spec</a></div>
+  <div class="kicker">Kaarana <span style="color:var(--faint)">·</span> ParkWise privacy harms <span style="color:var(--faint)">·</span> 5 / 5 <span style="color:var(--faint)">·</span> [DPI]</div>
+  <h1>Who else is in the <span class='accent'>loop</span></h1>
+  <p class="stand">The API is built for third-party BAPs and Juspay rails. <b>Each layer of the relay is a place purpose can drift — and the contracts that bind them are not public.</b></p>
+  <div class="lane"></div>
+  <h2>On the record (the spec)</h2>
+  <div class="specbox">
+    <div class="fr"><span class="fn">intended callers</span><span class="tag fin">fin</span><span class="fv">&ldquo;Third-party apps (BAPs) can search parking, book sessions and manage payments&rdquo; — by design, strangers sit in the loop</span></div>
+    <div class="fr"><span class="fn">payment_link</span><span class="tag fin">fin</span><span class="fv">Juspay-hosted — a payment institution sees payer and instrument data per transaction</span></div>
+    <div class="fr"><span class="fn">X-API-Key</span><span class="tag fin">fin</span><span class="fv">one key per app — the spec's only gate</span></div>
+    <div class="fr"><span class="fn">data-flow terms</span><span class="tag beh">beh</span><span class="fv"><b>none in spec</b> — no purpose limitation, no processor list, no sub-processor rules</span></div>
+  </div>
+<h2>The harm</h2>
+<p>Parking DPI is not one system; it is a <b>relay</b>. The ULB owns the curb and the concession; a vendor operates the platform; Beckn-style BAP apps resell discovery and booking; a payment institution carries the money; analytics and enforcement sit downstream. The public API is the visible edge of a contract stack that citizens never see — and each layer is a separate place where purpose can drift.</p>
+<p>The governance layer finally has teeth: India's <b>DPDP Rules, 2025</b> were notified on 13 November 2025 (G.S.R. 846(E)), operationalising the 2023 Act.<sup><a href="#n10">[10]</a></sup><sup><a href="#n12">[12]</a></sup> The rollout is phased — consent-manager provisions by November 2026, and full operational compliance (notices, breach reporting, retention, security safeguards) by <b>May 2027</b>.<sup><a href="#n11">[11]</a></sup> That timeline matters for parking precisely because these systems are being procured <b>now</b>: a concession signed today runs for years, so DPDP-grade obligations must be written into today's contracts, not retrofitted after May 2027.</p>
+<p>The constructive demand is boring and radical at once: <b>publish the contract stack</b>. The concession agreement, the DPDP consent notice text shown in the app, the list of BAPs and sub-processors, and the retention schedule. Cities that publish these convert a surveillance surface into an accountable one; cities that don't have chosen opacity over a parking app — a trade no consumer ever got to make.</p>
+
+  <h2>Ask your city</h2>
+  <div class="ask"><ul>
+    <li>Which BAPs and third-party apps are live on the platform, and what data fields does each receive?</li>
+    <li>Is the concession agreement (with data-processing and audit clauses) published?</li>
+    <li>What DPDP notice is shown at consent — and does it name the vendor, the payment institution and retention periods?</li>
+    <li>Was the concession signed before or after DPDP Rules 2025 — and does it require DPDP-grade compliance ahead of the May 2027 deadline?</li>
+  </ul></div>
+  <div class="harmnav">
+    <a href="/parkwise-demo/anpr"><b>ANPR</b>The camera behind the counter</a>
+    <a href="/parkwise-demo/vahan-chain"><b>VAHAN chain</b>One plate from a name</a>
+    <a href="/parkwise-demo/breach-ledger"><b>Breach ledger</b>When parking data leaks</a>
+    <a href="/parkwise-demo/pattern-of-life"><b>Pattern of life</b>Dwell time is a diary</a>
+    <a class="this" href="/parkwise-demo/who-else"><b>Who else</b>Vendors, BAPs, DPDP</a>
+  </div>
+  <h2>Sources</h2>
+  <ol class="end">
+    <li><a href="https://www.dpdpa.com/DPDP_Rules_2025_English_only.pdf">DPDP Rules, 2025 — Gazette notification G.S.R. 846(E), 13 Nov 2025</a> — Ministry of Electronics &amp; IT.</li>
+    <li><a href="https://www.deloitte.com/in/en/services/consulting/about/indias-dpdp-rules-2025-leading-digital-privacy-compliance.html">India's DPDP Rules 2025: phased compliance timeline (Nov 2026 / May 2027)</a> — Deloitte India.</li>
+    <li><a href="https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/nov/doc20251117695301.pdf">DPDP Rules, 2025 Notified — citizen-centric framework explainer</a> — PIB, Nov 2025.</li>
+  </ol>
+</div>
+<footer><div class="wrap">
+  KAARANA · ಕಾರಣ — independent critique of Aadhaar &amp; Digital India. Part of the <a href="/parkwise-demo">ParkWise evidence bench</a>.<br>
+  API-fact claims come from <a href="/parkwise-demo/spec">parkwise-public-api-openapi.json</a> v1.0.0; everything else is labelled inference. Simulated data throughout — no real sessions, plates or persons.
+</div></footer>
+</body>
+</html>
